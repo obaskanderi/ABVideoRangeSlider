@@ -49,15 +49,15 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         }
     }
 
+    let thumbnailsManager   = ABThumbnailsManager()
+
     var duration: Float64 {
         get {
             guard let asset = self.avasset else { return 0 }
             return CMTimeGetSeconds(asset.duration)
         }
     }
-    
-    let thumbnailsManager   = ABThumbnailsManager()
-   
+
     var progressPercentage: CGFloat = 0         // Represented in percentage
     var startPercentage: CGFloat    = 0         // Represented in percentage
     var endPercentage: CGFloat      = 100       // Represented in percentage
@@ -65,7 +65,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     let topBorderHeight: CGFloat      = 5
     let bottomBorderHeight: CGFloat   = 5
 
-    let indicatorWidth: CGFloat = 20.0
+    let indicatorWidth: CGFloat = 17.0
 
     public var minSpace: Float = 1              // In Seconds
     public var maxSpace: Float = 0              // In Seconds
@@ -542,9 +542,17 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         let endPosition = positionFromValue(value: self.endPercentage)
         let progressPosition = positionFromValue(value: self.progressPercentage)
 
-        startIndicator.center = CGPoint(x: startPosition, y: startIndicator.center.y)
-        endIndicator.center = CGPoint(x: endPosition, y: endIndicator.center.y)
-        progressIndicator.center = CGPoint(x: progressPosition, y: progressIndicator.center.y)
+        let height = self.bounds.size.height + bottomBorderHeight + topBorderHeight
+        let midY = self.bounds.midY
+        startIndicator.bounds.size.height = height
+        startIndicator.center = CGPoint(x: startPosition, y: midY)
+        
+        endIndicator.bounds.size.height = height
+        endIndicator.center = CGPoint(x: endPosition, y: midY)
+        
+        progressIndicator.bounds.size.height = height
+        progressIndicator.center = CGPoint(x: progressPosition, y: midY)
+        
         draggableView.frame = CGRect(x: startIndicator.frame.origin.x + startIndicator.frame.size.width,
                                      y: 0,
                                      width: endIndicator.frame.origin.x - startIndicator.frame.origin.x - endIndicator.frame.size.width,

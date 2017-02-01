@@ -19,7 +19,7 @@ class ABVideoHelper: NSObject {
             let uiImage = UIImage(cgImage: cgImage)
             return uiImage
         }catch{
-            
+            print("Could not generate image: \(error)")
         }
         return UIImage()
     }

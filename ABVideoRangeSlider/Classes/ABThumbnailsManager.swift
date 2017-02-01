@@ -37,7 +37,6 @@ class ABThumbnailsManager: NSObject {
                                          height: view.frame.size.height)
                 self.thumbnailViews.append(imageView)
                 
-                
                 view.addSubview(imageView)
                 UIView.animate(withDuration: 0.2, animations: {() -> Void in
                     imageView.alpha = 1.0
@@ -56,7 +55,7 @@ class ABThumbnailsManager: NSObject {
     private func timePointsForCount(_ avasset: AVAsset, count: Int) -> [CMTime]? {
         let duration = CMTimeGetSeconds(avasset.duration)
         
-        if duration == 0 || count == 0 {
+       if duration == 0 || count == 0 {
             return nil
         }
         
