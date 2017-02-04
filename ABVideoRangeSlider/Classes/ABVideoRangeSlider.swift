@@ -106,7 +106,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
         startIndicator = ABStartIndicator(frame: CGRect(x: 0,
                                                         y: -topBorderHeight,
-                                                        width: 20,
+                                                        width: indicatorWidth,
                                                         height: self.frame.size.height + bottomBorderHeight + topBorderHeight))
         startIndicator.layer.anchorPoint = CGPoint(x: 1, y: 0.5)
         startIndicator.addGestureRecognizer(startDrag)
