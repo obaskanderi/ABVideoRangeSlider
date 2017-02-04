@@ -33,9 +33,6 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     var progressIndicator   = ABProgressIndicator()
     var draggableView       = UIView()
 
-    private let leftTrimmedView = UIView()
-    private let rightTrimmedView = UIView()
-    
     public var startTimeView       = ABTimeView()
     public var endTimeView         = ABTimeView()
     
@@ -78,6 +75,9 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     
     var isReceivingGesture: Bool = false
     
+    var rightOverlay = UIView()
+    var leftOverlay = UIView()
+
     public enum ABTimeViewPosition{
         case top
         case bottom
@@ -100,12 +100,6 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     private func setup(){
         self.isUserInteractionEnabled = true
 
-        leftTrimmedView.backgroundColor = UIColor.black.withAlphaComponent(0.70)
-        self.addSubview(leftTrimmedView)
-        
-        rightTrimmedView.backgroundColor = UIColor.black.withAlphaComponent(0.70)
-        self.addSubview(rightTrimmedView)
-        
         // Setup Start Indicator
         let startDrag = UIPanGestureRecognizer(target:self,
                                                action: #selector(startDragged(recognizer:)))
@@ -182,6 +176,17 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         endTimeView = ABTimeView(size: CGSize(width: 60, height: 30), position: 1)
         endTimeView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         self.addSubview(endTimeView)
+        
+        
+        rightOverlay.alpha = 0.8
+        rightOverlay.isOpaque = false
+        rightOverlay.backgroundColor = UIColor.white
+        insertSubview(rightOverlay, belowSubview: startIndicator)
+        
+        leftOverlay.alpha = 0.8
+        leftOverlay.isOpaque = false
+        leftOverlay.backgroundColor = UIColor.white
+        insertSubview(leftOverlay, belowSubview: endIndicator)
     }
 
     public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -560,11 +565,8 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         startTimeView.center = CGPoint(x: startIndicator.center.x, y: startTimeView.center.y)
         endTimeView.center = CGPoint(x: endIndicator.center.x, y: endTimeView.center.y)
         
-        // Update trimmed area
-        leftTrimmedView.frame = CGRect(x: 0, y: 0, width: draggableView.frame.origin.x, height: frame.height)
-            
-        let x = draggableView.frame.origin.x + draggableView.frame.width
-        rightTrimmedView.frame = CGRect(x: x, y: 0, width: frame.width - x, height: frame.height)
+        rightOverlay.frame = CGRect(x: 0, y: 0, width: startPosition, height: bounds.height)
+        leftOverlay.frame = CGRect(x: endPosition, y: 0, width: bounds.width - endPosition, height: bounds.height)
     }
 
 
