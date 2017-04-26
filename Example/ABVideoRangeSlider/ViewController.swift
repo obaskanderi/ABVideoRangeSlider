@@ -18,6 +18,7 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     @IBOutlet var lblStart: UILabel!
     @IBOutlet var lblEnd: UILabel!
     @IBOutlet var lblMinSpace: UILabel!
+    @IBOutlet var lblProgress: UILabel!
     
     let path = Bundle.main.path(forResource: "test", ofType:"mp4")
     
@@ -90,7 +91,7 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     }
     
     func indicatorDidChangePosition(videoRangeSlider: ABVideoRangeSlider, position: Float64) {
-        print("position of indicator: \(position)")
+        lblProgress.text = "\(position)"
     }
 
 }

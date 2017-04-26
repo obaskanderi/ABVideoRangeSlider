@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11542" systemVersion="15G31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12120" systemVersion="16E195" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11524"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12088"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -83,17 +83,33 @@
                                     <constraint firstAttribute="height" constant="40" id="FgH-4C-ZDG"/>
                                 </constraints>
                             </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Progress:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SME-DP-MCJ">
+                                <rect key="frame" x="16" y="359" width="73" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="Label" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="49r-RS-zgl">
+                                <rect key="frame" x="317" y="358" width="42" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="c3F-DQ-vEz" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="0GJ-Ao-hh6"/>
                             <constraint firstItem="xXz-O0-35H" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="24" id="18c-v3-enh"/>
                             <constraint firstAttribute="trailing" secondItem="xXz-O0-35H" secondAttribute="trailing" constant="24" id="54G-w6-10V"/>
+                            <constraint firstItem="SME-DP-MCJ" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="EgY-MK-nLf"/>
+                            <constraint firstItem="SME-DP-MCJ" firstAttribute="top" secondItem="adA-VI-bql" secondAttribute="bottom" constant="18" id="FRx-6r-Rlf"/>
                             <constraint firstAttribute="trailing" secondItem="xOY-0j-fae" secondAttribute="trailing" constant="16" id="IbF-F6-M5q"/>
                             <constraint firstItem="adA-VI-bql" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="16" id="Kui-E5-G8D"/>
                             <constraint firstItem="guw-eu-ThB" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="16" id="LaK-Xp-Kjx"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="49r-RS-zgl" secondAttribute="trailing" id="OtL-kL-EJh"/>
                             <constraint firstItem="uFM-Pa-8Nr" firstAttribute="centerY" secondItem="adA-VI-bql" secondAttribute="centerY" id="S7b-52-I8h"/>
                             <constraint firstAttribute="trailing" secondItem="FS1-Uc-QNj" secondAttribute="trailing" constant="16" id="Z6f-3K-M7N"/>
+                            <constraint firstItem="49r-RS-zgl" firstAttribute="top" secondItem="uFM-Pa-8Nr" secondAttribute="bottom" constant="17" id="b8i-UW-npf"/>
                             <constraint firstItem="FS1-Uc-QNj" firstAttribute="centerY" secondItem="BBp-dv-DFH" secondAttribute="centerY" id="drJ-Wz-srw"/>
                             <constraint firstItem="BBp-dv-DFH" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="16" id="e6o-Gm-ioe"/>
                             <constraint firstItem="xXz-O0-35H" firstAttribute="top" secondItem="guw-eu-ThB" secondAttribute="bottom" constant="25" id="gsM-po-eeA"/>
@@ -109,6 +125,7 @@
                     <connections>
                         <outlet property="lblEnd" destination="FS1-Uc-QNj" id="Zxo-HK-SEP"/>
                         <outlet property="lblMinSpace" destination="uFM-Pa-8Nr" id="MK6-aY-7XI"/>
+                        <outlet property="lblProgress" destination="49r-RS-zgl" id="LOV-nB-sWd"/>
                         <outlet property="lblStart" destination="xOY-0j-fae" id="U7l-pv-ng0"/>
                         <outlet property="playerView" destination="guw-eu-ThB" id="4My-Gp-E6C"/>
                         <outlet property="videoRangeSlider" destination="xXz-O0-35H" id="vaP-NF-Jgt"/>
