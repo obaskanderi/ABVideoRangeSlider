@@ -80,10 +80,16 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
     public var colorScheme: UIColor = .green {
         didSet {
-            topLine.backgroundColor = colorScheme
-            bottomLine.backgroundColor = colorScheme
-            startIndicator.backgroundColor = colorScheme
-            endIndicator.backgroundColor = colorScheme
+            self.topLine.backgroundColor = colorScheme
+            self.bottomLine.backgroundColor = colorScheme
+            self.startIndicator.backgroundColor = colorScheme
+            self.endIndicator.backgroundColor = colorScheme
+        }
+    }
+    
+    public var progressIndicatorColor: UIColor = .white {
+        didSet {
+            self.progressIndicator.imageView.tintColor = progressIndicatorColor
         }
     }
     
@@ -168,6 +174,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
                                                               width: 10,
                                                               height: self.frame.size.height + bottomBorderHeight + topBorderHeight))
         progressIndicator.addGestureRecognizer(progressDrag)
+        progressIndicator.imageView.tintColor = progressIndicatorColor
         self.addSubview(progressIndicator)
 
         // Setup Draggable View
