@@ -28,8 +28,8 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
     var startIndicator      = ABStartIndicator()
     var endIndicator        = ABEndIndicator()
-    var topLine             = ABBorder()
-    var bottomLine          = ABBorder()
+    var topLine             = UIView()
+    var bottomLine          = UIView()
     var progressIndicator   = ABProgressIndicator()
     var draggableView       = UIView()
 
@@ -78,6 +78,15 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     var rightOverlay = UIView()
     var leftOverlay = UIView()
 
+    public var colorScheme: UIColor = .green {
+        didSet {
+            topLine.backgroundColor = colorScheme
+            bottomLine.backgroundColor = colorScheme
+            startIndicator.backgroundColor = colorScheme
+            endIndicator.backgroundColor = colorScheme
+        }
+    }
+    
     public enum ABTimeViewPosition{
         case top
         case bottom
@@ -110,6 +119,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
                                                         height: self.frame.size.height + bottomBorderHeight + topBorderHeight))
         startIndicator.layer.anchorPoint = CGPoint(x: 1, y: 0.5)
         startIndicator.addGestureRecognizer(startDrag)
+        startIndicator.backgroundColor = colorScheme
         self.addSubview(startIndicator)
 
         // Setup End Indicator
@@ -123,21 +133,24 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
                                                     height: self.frame.size.height + bottomBorderHeight + topBorderHeight))
         endIndicator.layer.anchorPoint = CGPoint(x: 0, y: 0.5)
         endIndicator.addGestureRecognizer(endDrag)
+        endIndicator.backgroundColor = colorScheme
         self.addSubview(endIndicator)
 
 
         // Setup Top and bottom line
 
-        topLine = ABBorder(frame: CGRect(x: 0,
-                                         y: -topBorderHeight,
-                                         width: indicatorWidth,
-                                         height: topBorderHeight))
+        topLine = UIView(frame: CGRect(x: 0,
+                                       y: -topBorderHeight,
+                                       width: indicatorWidth,
+                                       height: topBorderHeight))
+        topLine.backgroundColor = colorScheme
         self.addSubview(topLine)
 
-        bottomLine = ABBorder(frame: CGRect(x: 0,
-                                            y: self.frame.size.height,
-                                            width: indicatorWidth,
-                                            height: bottomBorderHeight))
+        bottomLine = UIView(frame: CGRect(x: 0,
+                                          y: self.frame.size.height,
+                                          width: indicatorWidth,
+                                          height: bottomBorderHeight))
+        bottomLine.backgroundColor = colorScheme
         self.addSubview(bottomLine)
 
         self.addObserver(self,
@@ -229,11 +242,6 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
     public func setEndIndicatorImage(image: UIImage){
         self.endIndicator.imageView.image = image
-    }
-
-    public func setBorderImage(image: UIImage){
-        self.topLine.imageView.image = image
-        self.bottomLine.imageView.image = image
     }
 
     public func setTimeView(view: ABTimeView){

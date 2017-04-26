@@ -35,9 +35,10 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        videoRangeSlider.videoURL =  URL(fileURLWithPath: path!)
+        videoRangeSlider.videoURL = URL(fileURLWithPath: path!)
         videoRangeSlider.delegate = self
         videoRangeSlider.minSpace = 60.0
+        videoRangeSlider.colorScheme = .blue
 //        videoRangeSlider.maxSpace = 180.0
 
         lblMinSpace.text = "\(videoRangeSlider.minSpace)"
@@ -75,10 +76,10 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         customView.layer.borderColor = UIColor.black.cgColor
         customView.layer.borderWidth = 1.0
         customView.layer.cornerRadius = 8.0
-        videoRangeSlider.startTimeView.backgroundView = customView
-        videoRangeSlider.startTimeView.marginLeft = 2.0
-        videoRangeSlider.startTimeView.marginRight = 2.0
-        videoRangeSlider.startTimeView.timeLabel.textColor = .white
+        //videoRangeSlider.startTimeView.backgroundView = customView
+        //videoRangeSlider.startTimeView.marginLeft = 2.0
+        //videoRangeSlider.startTimeView.marginRight = 2.0
+        //videoRangeSlider.startTimeView.timeLabel.textColor = .white
     }
     
     // MARK: ABVideoRangeSlider Delegate - Returns time in seconds

@@ -17,11 +17,10 @@ class ABEndIndicator: UIView {
         self.isUserInteractionEnabled = true
         
         let bundle = Bundle(for: ABStartIndicator.self)
-        let image = UIImage(named: "EndIndicator", in: bundle, compatibleWith: nil)
+        let image = UIImage(named: "RightArrow", in: bundle, compatibleWith: nil)
         
-        imageView.frame = self.bounds
         imageView.image = image
-        imageView.contentMode = UIViewContentMode.scaleToFill
+        imageView.contentMode = .scaleAspectFill
         self.addSubview(imageView)
     }
     
@@ -31,6 +30,17 @@ class ABEndIndicator: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        imageView.frame = self.bounds
+        let height = frame.height / 2
+        let width = frame.width / 2
+        let x = (frame.width - width) / 2
+        let y = (frame.height - height) / 2
+        imageView.frame = CGRect(x: x, y: y, width: width, height: height)
+        
+        let rectShape = CAShapeLayer()
+        rectShape.bounds = frame
+        rectShape.position = center
+        let pos = floor(bounds.width / 2)
+        rectShape.path = UIBezierPath(roundedRect: CGRect(x: pos, y: 0, width: bounds.width, height: bounds.height), byRoundingCorners: [.bottomRight, .topRight], cornerRadii: CGSize(width: pos, height: pos)).cgPath
+        layer.mask = rectShape
     }
 }

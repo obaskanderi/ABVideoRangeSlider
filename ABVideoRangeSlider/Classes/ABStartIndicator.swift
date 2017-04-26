@@ -17,11 +17,10 @@ class ABStartIndicator: UIView {
         self.isUserInteractionEnabled = true
         
         let bundle = Bundle(for: ABStartIndicator.self)
-        let image = UIImage(named: "StartIndicator", in: bundle, compatibleWith: nil)
-        
-        imageView.frame = self.bounds
+        let image = UIImage(named: "LeftArrow", in: bundle, compatibleWith: nil)
+    
         imageView.image = image
-        imageView.contentMode = UIViewContentMode.scaleToFill
+        imageView.contentMode = .scaleAspectFill
         self.addSubview(imageView)
     }
 
@@ -31,6 +30,18 @@ class ABStartIndicator: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        imageView.frame = self.bounds
+        
+        let height = frame.height / 2
+        let width = frame.width / 2
+        let x = (frame.width - width) / 2
+        let y = (frame.height - height) / 2
+        imageView.frame = CGRect(x: x, y: y, width: width, height: height)
+        
+        let rectShape = CAShapeLayer()
+        rectShape.bounds = frame
+        rectShape.position = center
+        let pos = floor(bounds.width / 2)
+        rectShape.path = UIBezierPath(roundedRect: CGRect(x: -pos, y: 0, width: bounds.width, height: bounds.height), byRoundingCorners: [.bottomLeft, .topLeft], cornerRadii: CGSize(width: pos, height: pos)).cgPath
+        layer.mask = rectShape
     }
 }
