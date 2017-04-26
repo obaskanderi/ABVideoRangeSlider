@@ -72,6 +72,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     
     public var isProgressIndicatorSticky: Bool = false
     public var isProgressIndicatorDraggable: Bool = true
+    public var isTimeViewSticky: Bool = false
     
     var isReceivingGesture: Bool = false
     
@@ -92,6 +93,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
             self.progressIndicator.imageView.tintColor = progressIndicatorColor
         }
     }
+    
     
     public enum ABTimeViewPosition{
         case top
@@ -176,6 +178,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         progressIndicator.addGestureRecognizer(progressDrag)
         progressIndicator.imageView.tintColor = progressIndicatorColor
         self.addSubview(progressIndicator)
+        
 
         // Setup Draggable View
 
@@ -275,6 +278,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
     public func setStartPosition(seconds: Float){
         self.startPercentage = self.valueFromSeconds(seconds: seconds)
+        self.progressPercentage = self.startPercentage
         layoutSubviews()
     }
 
@@ -315,7 +319,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         
         let translation = recognizer.translation(in: self)
         
-        var position: CGFloat = positionFromValue(value: currentPositionPercentage) // self.startPercentage or self.endPercentage
+        var position: CGFloat = positionFromValue(value: currentPositionPercentage)
         
         position = position + translation.x
         
@@ -351,34 +355,35 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         
         self.delegate?.didChangeValue(videoRangeSlider: self, startTime: startSeconds, endTime: endSeconds)
         
-        var progressPosition: CGFloat = 0.0
-        
         if drag == .start {
             self.startPercentage = percentage
         } else {
             self.endPercentage = percentage
         }
         
-        if drag == .start {
-            progressPosition = positionFromValue(value: self.startPercentage)
-            
+        if self.isReceivingGesture {
+            self.progressIndicator.alpha = 0
         } else {
-            if recognizer.state != .ended {
-                progressPosition = positionFromValue(value: self.endPercentage)
+            var progressPosition: CGFloat = 0.0
+            if drag == .start {
+                progressPosition = self.positionFromValue(value: self.startPercentage)
             } else {
-                progressPosition = positionFromValue(value: self.startPercentage)
+                progressPosition = self.positionFromValue(value: self.endPercentage)
             }
+            
+            self.progressIndicator.center = CGPoint(x: progressPosition , y: self.progressIndicator.center.y)
+            let progressPercentage = self.progressIndicator.center.x * 100 / self.frame.width
+            
+            if self.progressPercentage != progressPercentage {
+                let progressSeconds = self.secondsFromValue(value: progressPercentage)
+                self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
+            }
+            self.progressPercentage = progressPercentage
+            
+            UIView.animate(withDuration: 0.5, delay: 0, options: .curveLinear, animations: {
+                self.progressIndicator.alpha = 1
+            }, completion: nil)
         }
-        
-        progressIndicator.center = CGPoint(x: progressPosition , y: progressIndicator.center.y)
-        let progressPercentage = progressIndicator.center.x * 100 / self.frame.width
-        
-        if self.progressPercentage != progressPercentage {
-            let progressSeconds = secondsFromValue(value: progressPercentage)
-            self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
-        }
-        
-        self.progressPercentage = progressPercentage
         
         layoutSubviews()
     }
@@ -440,7 +445,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
             progressPosition = progressPosition - translation.x
         }
 
-        if endPosition > self.frame.size.width{
+        if endPosition > self.frame.size.width {
             endPosition = self.frame.size.width
             startPosition = startPosition - translation.x
             progressPosition = progressPosition - translation.x
@@ -461,7 +466,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
         self.delegate?.didChangeValue(videoRangeSlider: self, startTime: startSeconds, endTime: endSeconds)
 
-        if self.progressPercentage != progressPercentage{
+        if self.progressPercentage != progressPercentage {
             let progressSeconds = secondsFromValue(value: progressPercentage)
             self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
         }
@@ -550,7 +555,11 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     override public func layoutSubviews() {
         super.layoutSubviews()
 
-        startTimeView.timeLabel.text = self.secondsToFormattedString(totalSeconds: secondsFromValue(value: self.startPercentage))
+        if progressPercentage > startPercentage {
+            startTimeView.timeLabel.text = self.secondsToFormattedString(totalSeconds: secondsFromValue(value: self.progressPercentage))
+        } else {
+            startTimeView.timeLabel.text = self.secondsToFormattedString(totalSeconds: secondsFromValue(value: self.startPercentage))
+        }
         endTimeView.timeLabel.text = self.secondsToFormattedString(totalSeconds: secondsFromValue(value: self.endPercentage))
 
         let startPosition = positionFromValue(value: self.startPercentage)
@@ -585,8 +594,13 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
                                   height: bottomBorderHeight)
 
         // Update time view
-        startTimeView.center = CGPoint(x: startIndicator.center.x, y: startTimeView.center.y)
-        endTimeView.center = CGPoint(x: endIndicator.center.x, y: endTimeView.center.y)
+        if isTimeViewSticky {
+            startTimeView.frame.origin.x = 0
+            endTimeView.frame.origin.x = frame.width - endTimeView.frame.width
+        } else {
+            startTimeView.center = CGPoint(x: startIndicator.center.x, y: startTimeView.center.y)
+            endTimeView.center = CGPoint(x: endIndicator.center.x, y: endTimeView.center.y)
+        }
         
         rightOverlay.frame = CGRect(x: 0, y: 0, width: startPosition, height: bounds.height)
         leftOverlay.frame = CGRect(x: endPosition, y: 0, width: bounds.width - endPosition, height: bounds.height)

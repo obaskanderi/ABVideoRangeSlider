@@ -40,6 +40,7 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         videoRangeSlider.delegate = self
         videoRangeSlider.minSpace = 60.0
         videoRangeSlider.colorScheme = .blue
+        videoRangeSlider.isTimeViewSticky = true
 //        videoRangeSlider.maxSpace = 180.0
 
         lblMinSpace.text = "\(videoRangeSlider.minSpace)"
@@ -65,22 +66,17 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         videoRangeSlider.setProgressIndicatorImage(image: customProgressIndicator!)
 */
 
-        
       
-        // Customize starTimeView
-        let customView = UIView(frame: CGRect(x: 0,
-                                              y: 0,
-                                              width: 60,
-                                              height: 40))
-        customView.backgroundColor = .black
-        customView.alpha = 0.5
-        customView.layer.borderColor = UIColor.black.cgColor
-        customView.layer.borderWidth = 1.0
-        customView.layer.cornerRadius = 8.0
-        //videoRangeSlider.startTimeView.backgroundView = customView
-        //videoRangeSlider.startTimeView.marginLeft = 2.0
-        //videoRangeSlider.startTimeView.marginRight = 2.0
-        //videoRangeSlider.startTimeView.timeLabel.textColor = .white
+        // Customize starTimeView endTimeView
+        videoRangeSlider.startTimeView.marginLeft = 2.0
+        videoRangeSlider.startTimeView.marginRight = 2.0
+        videoRangeSlider.startTimeView.timeLabel.textColor = .black
+        videoRangeSlider.startTimeView.backgroundView.backgroundColor = .clear
+    
+        videoRangeSlider.endTimeView.marginLeft = 2.0
+        videoRangeSlider.endTimeView.marginRight = 2.0
+        videoRangeSlider.endTimeView.timeLabel.textColor = .black
+        videoRangeSlider.endTimeView.backgroundView.backgroundColor = .clear
     }
     
     // MARK: ABVideoRangeSlider Delegate - Returns time in seconds
@@ -91,6 +87,7 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     }
     
     func indicatorDidChangePosition(videoRangeSlider: ABVideoRangeSlider, position: Float64) {
+        lblStart.text = "\(position)"
         lblProgress.text = "\(position)"
     }
 
