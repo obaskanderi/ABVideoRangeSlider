@@ -108,6 +108,12 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         }
     }
     
+    override public var frame: CGRect {
+        didSet {
+            updateThumbnails()
+        }
+    }
+    
     // Private/Internal variables
     
     private enum DragHandleChoice {
@@ -272,8 +278,9 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     }
 
     public func updateThumbnails() {
+        guard let asset = self.avasset else { return }
         DispatchQueue.global(qos: .background).async {
-            self.thumbnailsManager.generateThumbnails(self, for: self.avasset)
+            self.thumbnailsManager.generateThumbnails(self, for: asset)
         }
     }
 
