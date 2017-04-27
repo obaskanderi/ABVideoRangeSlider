@@ -101,6 +101,9 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     public var endPosition: Float = 0 { // In Seconds
         didSet {
             self.endPercentage = self.valueFromSeconds(endPosition)
+            if progressPercentage > endPercentage {
+                progressPercentage = endPercentage
+            }
             layoutSubviews()
         }
     }
@@ -128,7 +131,6 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     let topBorderHeight: CGFloat      = 5
     let bottomBorderHeight: CGFloat   = 5
     let indicatorWidth: CGFloat = 17.0
-
     
     var isReceivingGesture: Bool = false
     
@@ -350,21 +352,9 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         if self.isReceivingGesture {
             self.progressIndicator.alpha = 0
         } else {
-            var progressPosition: CGFloat = 0.0
-            if drag == .start {
-                progressPosition = self.positionFromValue(self.startPercentage)
-            } else {
-                progressPosition = self.positionFromValue(self.endPercentage)
-            }
-            
-            self.progressIndicator.center = CGPoint(x: progressPosition , y: self.progressIndicator.center.y)
-            let progressPercentage = self.progressIndicator.center.x * 100 / self.frame.width
-            
-            if self.progressPercentage != progressPercentage {
-                let progressSeconds = self.secondsFromValue(progressPercentage)
-                self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
-            }
-            self.progressPercentage = progressPercentage
+            self.progressPercentage = percentage
+            let progressSeconds = self.secondsFromValue(progressPercentage)
+            self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
             
             UIView.animate(withDuration: 0.5, delay: 0, options: .curveLinear, animations: {
                 self.progressIndicator.alpha = 1
@@ -445,21 +435,17 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
         let startPercentage = startIndicator.center.x * 100 / self.frame.width
         let endPercentage = endIndicator.center.x * 100 / self.frame.width
-        let progressPercentage = progressIndicator.center.x * 100 / self.frame.width
-
+        
         let startSeconds = secondsFromValue(startPercentage)
         let endSeconds = secondsFromValue(endPercentage)
-
         self.delegate?.didChangeValue(videoRangeSlider: self, startTime: startSeconds, endTime: endSeconds)
-
-        if self.progressPercentage != progressPercentage {
-            let progressSeconds = secondsFromValue(progressPercentage)
-            self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
-        }
-
+        
+        let progressSeconds = startSeconds
+        self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
+        
         self.startPercentage = startPercentage
         self.endPercentage = endPercentage
-        self.progressPercentage = progressPercentage
+        self.progressPercentage = startPercentage
 
         layoutSubviews()
     }
@@ -551,7 +537,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         let startPosition = positionFromValue(self.startPercentage)
         let endPosition = positionFromValue(self.endPercentage)
         let progressPosition = positionFromValue(self.progressPercentage)
-
+        
         let height = self.bounds.size.height + bottomBorderHeight + topBorderHeight
         let midY = self.bounds.midY
         startIndicator.bounds.size.height = height
