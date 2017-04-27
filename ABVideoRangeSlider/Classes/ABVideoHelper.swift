@@ -24,7 +24,7 @@ class ABVideoHelper: NSObject {
         return UIImage()
     }
     
-    static func videoDuration(videoURL: URL) -> Float64{
+    static func videoDuration(_ videoURL: URL) -> Float64{
         let source = AVURLAsset(url: videoURL)
         return CMTimeGetSeconds(source.duration)
     }

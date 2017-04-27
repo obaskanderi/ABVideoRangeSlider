@@ -39,17 +39,17 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         videoRangeSlider.videoURL = URL(fileURLWithPath: path!)
         videoRangeSlider.delegate = self
         videoRangeSlider.minSpace = 60.0
-        videoRangeSlider.colorScheme = .blue
+        videoRangeSlider.colorScheme = .gray
         videoRangeSlider.isTimeViewSticky = true
 //        videoRangeSlider.maxSpace = 180.0
 
         lblMinSpace.text = "\(videoRangeSlider.minSpace)"
         
         // Set initial position of Start Indicator
-        videoRangeSlider.setStartPosition(seconds: 50.0)
+        videoRangeSlider.startPosition = 50
         
         // Set initial position of End Indicator
-        videoRangeSlider.setEndPosition(seconds: 150.0)
+        videoRangeSlider.endPosition = 150
         
         /* Uncomment to customize the Video Range Slider */
 /*
@@ -66,7 +66,6 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         videoRangeSlider.setProgressIndicatorImage(image: customProgressIndicator!)
 */
 
-      
         // Customize starTimeView endTimeView
         videoRangeSlider.startTimeView.marginLeft = 2.0
         videoRangeSlider.startTimeView.marginRight = 2.0
@@ -84,6 +83,12 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     func didChangeValue(videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64) {
         lblStart.text = "\(startTime)"
         lblEnd.text = "\(endTime)"
+        
+        if startTime > 0 || endTime < videoRangeSlider.duration {
+            videoRangeSlider.colorScheme = .green
+        } else {
+            videoRangeSlider.colorScheme = .gray
+        }
     }
     
     func indicatorDidChangePosition(videoRangeSlider: ABVideoRangeSlider, position: Float64) {
