@@ -19,26 +19,52 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     @IBOutlet var lblEnd: UILabel!
     @IBOutlet var lblMinSpace: UILabel!
     @IBOutlet var lblProgress: UILabel!
+    @IBOutlet var playButton: UIButton!
     
+    @IBAction func playVideoPressed(_ sender: Any) {
+        if !isPlaying {
+            player.play()
+            playButton.setTitle("Pause", for: .normal)
+        } else {
+            player.pause()
+            playButton.setTitle("Play", for: .normal)
+        }
+        isPlaying = !isPlaying
+    }
+     
     let path = Bundle.main.path(forResource: "test", ofType:"mp4")
+    
+    var player: AVPlayer!
+    var playerLayer: AVPlayerLayer!
+    var isPlaying = false
+    var isSeekInProgress = false
+    var chaseTime = kCMTimeZero
+    
+    private var startTime = 50
+    private var endTime = 150
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let asset = AVURLAsset(url: URL(fileURLWithPath: path!))
+        let playerItem = AVPlayerItem(asset: asset)
+        playerItem.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.status), options: [.old, .new], context: nil)
+        
+        self.player =  AVPlayer(playerItem: playerItem)
+        _ = player.addPeriodicTimeObserver(forInterval: CMTimeMake(1, 10), queue: DispatchQueue.main, using: { [weak self] (elapsedTime: CMTime) in
+            guard let sself = self else { return }
+            sself.observeTime(elapsedTime)
+        })
+        player.actionAtItemEnd = .pause
+        
+        self.playerLayer = AVPlayerLayer(player: player)
+        self.view.layer.addSublayer(playerLayer)
     }
 
-    @IBAction func playVideo(_ sender: Any) {
-        let player = AVPlayer(url: URL(fileURLWithPath: path!))
-        let playerViewController = AVPlayerViewController()
-        playerViewController.player = player
-        self.present(playerViewController, animated: true) {
-            playerViewController.player!.play()
-        }
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         videoRangeSlider.videoURL = URL(fileURLWithPath: path!)
         videoRangeSlider.delegate = self
-        videoRangeSlider.minSpace = 60.0
+        videoRangeSlider.minSpace = 15.0
         videoRangeSlider.colorScheme = .gray
         videoRangeSlider.isTimeViewSticky = true
 //        videoRangeSlider.maxSpace = 180.0
@@ -46,10 +72,10 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         lblMinSpace.text = "\(videoRangeSlider.minSpace)"
         
         // Set initial position of Start Indicator
-        videoRangeSlider.startPosition = 50
+        videoRangeSlider.startPosition = Float(startTime)
         
         // Set initial position of End Indicator
-        videoRangeSlider.endPosition = 150
+        videoRangeSlider.endPosition = Float(endTime)
         
         /* Uncomment to customize the Video Range Slider */
 /*
@@ -78,11 +104,40 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
         videoRangeSlider.endTimeView.backgroundView.backgroundColor = .clear
     }
     
+    override func viewDidLayoutSubviews() {
+        playerLayer.frame = CGRect(x: 15, y: 30, width: self.view.bounds.width - 30, height: 100)
+    }
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if player.currentItem?.status == .readyToPlay {
+            let seekToTime = CMTimeMake(Int64(startTime), 1)
+            stopPlayingAndSeekSmoothlyToTime(seekToTime)
+        }
+    }
+    
+    fileprivate func observeTime(_ elapsedTime: CMTime) {
+        if isPlaying {
+            let seconds = CMTimeGetSeconds(player.currentTime())
+            videoRangeSlider.updateProgressIndicator(seconds)
+        
+            if Float(seconds) >= videoRangeSlider.endPosition {
+                isPlaying = false
+                player.pause()
+                playButton.setTitle("Play", for: .normal)
+                stopPlayingAndSeekSmoothlyToTime(CMTimeMake(Int64(startTime), 1))
+                videoRangeSlider.updateProgressIndicator(Float64(startTime))
+            }
+        }
+    }
+    
     // MARK: ABVideoRangeSlider Delegate - Returns time in seconds
     
     func didChangeValue(videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64) {
         lblStart.text = "\(startTime)"
         lblEnd.text = "\(endTime)"
+        
+        self.startTime = Int(startTime)
+        self.endTime = Int(endTime)
         
         if startTime > 0 || endTime < videoRangeSlider.duration {
             videoRangeSlider.colorScheme = .green
@@ -94,6 +149,45 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     func indicatorDidChangePosition(videoRangeSlider: ABVideoRangeSlider, position: Float64) {
         lblStart.text = "\(position)"
         lblProgress.text = "\(position)"
+        
+        let seekToTime = CMTimeMake(Int64(position), 1)
+        stopPlayingAndSeekSmoothlyToTime(seekToTime)
     }
 
+    
+    // MARK: AVPlayer Helper functions to seek
+    
+    func stopPlayingAndSeekSmoothlyToTime(_ newChaseTime: CMTime) {
+        player.pause()
+        if CMTimeCompare(newChaseTime, chaseTime) != 0 {
+            chaseTime = newChaseTime;
+            if !isSeekInProgress {
+                trySeekToChaseTime()
+            }
+        }
+    }
+    
+    func trySeekToChaseTime() {
+        if player.status == .unknown {
+            // wait until item becomes ready (KVO player.currentItem.status)
+        } else if player.status == .readyToPlay {
+            actuallySeekToTime()
+        }
+    }
+    
+    func actuallySeekToTime() {
+        isSeekInProgress = true
+        let seekTimeInProgress = chaseTime
+        player.seek(to: seekTimeInProgress, toleranceBefore: kCMTimeZero,
+                    toleranceAfter: kCMTimeZero, completionHandler:
+            { (isFinished:Bool) -> Void in
+                
+                if CMTimeCompare(seekTimeInProgress, self.chaseTime) == 0 {
+                    self.isSeekInProgress = false
+                } else {
+                    self.trySeekToChaseTime()
+                }
+        })
+    }
+    
 }
