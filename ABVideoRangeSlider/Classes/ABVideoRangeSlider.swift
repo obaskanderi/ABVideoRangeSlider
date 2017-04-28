@@ -7,18 +7,20 @@
 //
 
 import UIKit
+import Photos
 import AVFoundation
 
 @objc public protocol ABVideoRangeSliderDelegate: class {
     @objc optional func didChangeValue(_ videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64)
     @objc optional func indicatorDidChangePosition(_ videoRangeSlider: ABVideoRangeSlider, position: Float64)
+    @objc optional func onPreparingThumbnails()
     @objc optional func onThumbnailsReady()
     @objc optional func sliderGesturesBegan()
     @objc optional func sliderGesturesEnded()
 }
 
 public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
-
+    
     // Public Variables
     public weak var delegate: ABVideoRangeSliderDelegate? = nil
     public var minSpace: Float = 1  // In Seconds
@@ -26,15 +28,37 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     
     public var isProgressIndicatorSticky: Bool = false
     public var isProgressIndicatorDraggable: Bool = true
-    public var isTimeViewSticky: Bool = false
+    
+    public var isTimeViewSticky: Bool = false {
+        didSet {
+            if isTimeViewSticky {
+                startTimeView.timeLabel.textAlignment = .left
+                endTimeView.timeLabel.textAlignment = .right
+            } else {
+                startTimeView.timeLabel.textAlignment = .center
+                endTimeView.timeLabel.textAlignment = .center
+            }
+        }
+    }
     
     public var startTimeView  = ABTimeView()
     public var endTimeView    = ABTimeView()
     
-    public var avasset: AVAsset! {
+    public var asset: PHAsset! {
         didSet {
-            self.superview?.layoutSubviews()
-            self.updateThumbnails()
+            if asset != oldValue && asset.mediaType == .video {
+                self.isThumbnailsReady = false
+                DispatchQueue.global(qos: .background).async {
+                    PHImageManager.default().requestAVAsset(forVideo: self.asset, options: self.videoOption) { (avasset: AVAsset?, audioMix: AVAudioMix?, info: [AnyHashable : Any]?) in
+                        guard let avasset = avasset else { return }
+                        self.avasset = avasset
+                    }
+                }
+            } else if asset != oldValue {
+                print("\(ABVideoRangeSlider.self) ERROR: Failed to set asset, \(asset == nil ? "asset is nil" : "asset mediaType is not video")")
+            } else if self.isThumbnailsReady {
+                self.delegate?.onThumbnailsReady?()
+            }
         }
     }
     
@@ -46,8 +70,12 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     
     public var duration: Float64 {
         get {
-            guard let asset = self.avasset else { return 0 }
-            return CMTimeGetSeconds(asset.duration)
+            if let asset = self.asset {
+                return asset.duration
+            }
+            
+            guard let avasset = self.avasset else { return 0 }
+            return CMTimeGetSeconds(avasset.duration)
         }
     }
     
@@ -115,9 +143,32 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         }
     }
     
+    public var fontSize: CGFloat = 12 {
+        didSet {
+            startTimeView.timeLabel.font = UIFont.systemFont(ofSize: fontSize)
+            endTimeView.timeLabel.font = UIFont.systemFont(ofSize: fontSize)
+        }
+    }
+    
+    public var fontColor: UIColor = .black {
+        didSet {
+            startTimeView.timeLabel.textColor = fontColor
+            endTimeView.timeLabel.textColor = fontColor
+        }
+    }
+    
+    public var timeViewBackgroundColor: UIColor = .yellow {
+        didSet {
+            startTimeView.backgroundView.backgroundColor = timeViewBackgroundColor
+            endTimeView.backgroundView.backgroundColor = timeViewBackgroundColor
+        }
+    }
+    
     override public var frame: CGRect {
         didSet {
-            updateThumbnails()
+            if frame != oldValue {
+                updateThumbnails()
+            }
         }
     }
     
@@ -128,19 +179,28 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         case end
     }
     
+    private var avasset: AVAsset! {
+        didSet {
+            if avasset != oldValue {
+                self.superview?.layoutSubviews()
+                self.updateThumbnails()
+            }
+        }
+    }
+    
     var startIndicator      = ABStartIndicator()
     var endIndicator        = ABEndIndicator()
     var topLine             = UIView()
     var bottomLine          = UIView()
     var progressIndicator   = ABProgressIndicator()
     var draggableView       = UIView()
-
-    let thumbnailsManager   = ABThumbnailsManager()
-
+    
+    private let thumbnailsManager   = ABThumbnailsManager()
+    
     var progressPercentage: CGFloat = 0         // Represented in percentage
     var startPercentage: CGFloat    = 0         // Represented in percentage
     var endPercentage: CGFloat      = 100       // Represented in percentage
-
+    
     let topBorderHeight: CGFloat      = 5
     let bottomBorderHeight: CGFloat   = 5
     let indicatorWidth: CGFloat = 17.0
@@ -149,28 +209,43 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     
     var rightOverlay = UIView()
     var leftOverlay = UIView()
-
+    
+    private let videoOption = PHVideoRequestOptions()
+    
+    private var isThumbnailsReady = false {
+        didSet {
+            if isThumbnailsReady {
+                delegate?.onThumbnailsReady?()
+            } else {
+                delegate?.onPreparingThumbnails?()
+            }
+        }
+    }
+    
     override public func awakeFromNib() {
         super.awakeFromNib()
         self.setup()
     }
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         self.setup()
     }
-
+    
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
-
+    
     private func setup(){
         self.isUserInteractionEnabled = true
-
+        
+        self.videoOption.version = .original
+        self.videoOption.deliveryMode = .fastFormat
+        
         // Setup Start Indicator
         let startDrag = UIPanGestureRecognizer(target:self,
                                                action: #selector(startDragged))
-
+        
         startIndicator = ABStartIndicator(frame: CGRect(x: 0,
                                                         y: -topBorderHeight,
                                                         width: indicatorWidth,
@@ -179,12 +254,12 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         startIndicator.addGestureRecognizer(startDrag)
         startIndicator.backgroundColor = colorScheme
         self.addSubview(startIndicator)
-
+        
         // Setup End Indicator
-
+        
         let endDrag = UIPanGestureRecognizer(target:self,
                                              action: #selector(endDragged))
-
+        
         endIndicator = ABEndIndicator(frame: CGRect(x: 0,
                                                     y: -topBorderHeight,
                                                     width: indicatorWidth,
@@ -193,34 +268,33 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         endIndicator.addGestureRecognizer(endDrag)
         endIndicator.backgroundColor = colorScheme
         self.addSubview(endIndicator)
-
-
+        
         // Setup Top and bottom line
-
+        
         topLine = UIView(frame: CGRect(x: 0,
                                        y: -topBorderHeight,
                                        width: indicatorWidth,
                                        height: topBorderHeight))
         topLine.backgroundColor = colorScheme
         self.addSubview(topLine)
-
+        
         bottomLine = UIView(frame: CGRect(x: 0,
                                           y: self.frame.size.height,
                                           width: indicatorWidth,
                                           height: bottomBorderHeight))
         bottomLine.backgroundColor = colorScheme
         self.addSubview(bottomLine)
-
+        
         self.addObserver(self,
                          forKeyPath: "bounds",
                          options: NSKeyValueObservingOptions(rawValue: 0),
                          context: nil)
-
+        
         // Setup Progress Indicator
-
+        
         let progressDrag = UIPanGestureRecognizer(target:self,
                                                   action: #selector(progressDragged))
-
+        
         progressIndicator = ABProgressIndicator(frame: CGRect(x: 0,
                                                               y: -topBorderHeight,
                                                               width: 10,
@@ -229,24 +303,30 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         progressIndicator.imageView.tintColor = progressIndicatorColor
         self.addSubview(progressIndicator)
         
-
+        
         // Setup Draggable View
-
+        
         let viewDrag = UIPanGestureRecognizer(target:self,
                                               action: #selector(viewDragged))
-
+        
         draggableView.addGestureRecognizer(viewDrag)
         self.draggableView.backgroundColor = .clear
         self.sendSubview(toBack: draggableView)
-
+        
         // Setup time labels
-
+        
         startTimeView = ABTimeView(size: CGSize(width: 60, height: 30), position: 1)
         startTimeView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        startTimeView.timeLabel.font = UIFont.systemFont(ofSize: fontSize)
+        startTimeView.timeLabel.textColor = fontColor
+        startTimeView.backgroundView.backgroundColor = timeViewBackgroundColor
         self.addSubview(startTimeView)
-
+        
         endTimeView = ABTimeView(size: CGSize(width: 60, height: 30), position: 1)
         endTimeView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        endTimeView.timeLabel.font = UIFont.systemFont(ofSize: fontSize)
+        endTimeView.timeLabel.textColor = fontColor
+        endTimeView.backgroundView.backgroundColor = timeViewBackgroundColor
         self.addSubview(endTimeView)
         
         
@@ -260,38 +340,41 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         leftOverlay.backgroundColor = overlayColor
         insertSubview(leftOverlay, belowSubview: endIndicator)
     }
-
+    
     public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "bounds"{
+            self.isThumbnailsReady = false
             self.updateThumbnails()
         }
     }
-
+    
     // MARK: Public functions
-
+    
     public func updateProgressIndicator(_ seconds: Float64) {
         if !isReceivingGesture {
-            let endSeconds = secondsFromValue(self.endPercentage)
-            
-            if seconds >= endSeconds {
-                self.resetProgressPosition()
+            if seconds >= secondsFromValue(self.endPercentage) {
+                self.progressPercentage = self.endPercentage
+            } else if seconds <= secondsFromValue(self.startPercentage) {
+                self.progressPercentage = self.startPercentage
             } else {
                 self.progressPercentage = self.valueFromSeconds(Float(seconds))
             }
-
+            
             layoutSubviews()
         }
     }
-
+    
     public func updateThumbnails() {
         guard let asset = self.avasset else { return }
         DispatchQueue.global(qos: .background).async {
-            self.thumbnailsManager.generateThumbnails(self, for: asset, completion: self.delegate?.onThumbnailsReady)
+            self.thumbnailsManager.generateThumbnails(self, for: asset, completion: {
+                self.isThumbnailsReady = true
+            })
         }
     }
-
+    
     // MARK: - Private functions
-
+    
     // MARK: - Crop Handle Drag Functions
     @objc private func startDragged(_ recognizer: UIPanGestureRecognizer){
         self.processHandleDrag(
@@ -310,7 +393,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
             currentIndicator: self.endIndicator
         )
     }
-
+    
     private func processHandleDrag(_ recognizer: UIPanGestureRecognizer,
                                    drag: DragHandleChoice,
                                    currentPositionPercentage: CGFloat,
@@ -329,10 +412,10 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         if position > self.frame.size.width {
             position = self.frame.size.width
         }
-
+        
         let positionLimits = getPositionLimits(with: drag)
         position = checkEdgeCasesForPosition(with: position, and: positionLimits.min, and: drag)
-
+        
         if Float(self.duration) > self.maxSpace && self.maxSpace > 0 {
             if drag == .start {
                 if position < positionLimits.max {
@@ -385,67 +468,67 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         updateGestureStatus(recognizer)
         
         let translation = recognizer.translation(in: self)
-
+        
         let positionLimitStart  = positionFromValue(self.startPercentage)
         let positionLimitEnd    = positionFromValue(self.endPercentage)
-
+        
         var position = positionFromValue(self.progressPercentage)
         position = position + translation.x
-
+        
         if position < positionLimitStart {
             position = positionLimitStart
         }
-
+        
         if position > positionLimitEnd {
             position = positionLimitEnd
         }
-
+        
         recognizer.setTranslation(CGPoint.zero, in: self)
-
+        
         progressIndicator.center = CGPoint(x: position , y: progressIndicator.center.y)
-
+        
         let percentage = progressIndicator.center.x * 100 / self.frame.width
-
+        
         let progressSeconds = secondsFromValue(progressPercentage)
-
+        
         self.delegate?.indicatorDidChangePosition?(self, position: progressSeconds)
-
+        
         self.progressPercentage = percentage
-
+        
         layoutSubviews()
     }
-
+    
     func viewDragged(_ recognizer: UIPanGestureRecognizer){
         updateGestureStatus(recognizer)
         
         let translation = recognizer.translation(in: self)
-
+        
         var progressPosition = positionFromValue(self.progressPercentage)
         var startPosition = positionFromValue(self.startPercentage)
         var endPosition = positionFromValue(self.endPercentage)
-
+        
         startPosition = startPosition + translation.x
         endPosition = endPosition + translation.x
         progressPosition = progressPosition + translation.x
-
+        
         if startPosition < 0 {
             startPosition = 0
             endPosition = endPosition - translation.x
             progressPosition = progressPosition - translation.x
         }
-
+        
         if endPosition > self.frame.size.width {
             endPosition = self.frame.size.width
             startPosition = startPosition - translation.x
             progressPosition = progressPosition - translation.x
         }
-
+        
         recognizer.setTranslation(CGPoint.zero, in: self)
-
+        
         progressIndicator.center = CGPoint(x: progressPosition , y: progressIndicator.center.y)
         startIndicator.center = CGPoint(x: startPosition , y: startIndicator.center.y)
         endIndicator.center = CGPoint(x: endPosition , y: endIndicator.center.y)
-
+        
         let startPercentage = startIndicator.center.x * 100 / self.frame.width
         let endPercentage = endIndicator.center.x * 100 / self.frame.width
         
@@ -459,7 +542,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         self.startPercentage = startPercentage
         self.endPercentage = endPercentage
         self.progressPercentage = startPercentage
-
+        
         layoutSubviews()
     }
     
@@ -506,10 +589,16 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     }
     
     private func secondsFromValue(_ value: CGFloat) -> Float64{
+        if value == 0 {
+            return 0
+        }
         return duration * Float64((value / 100))
     }
-
+    
     private func valueFromSeconds(_ seconds: Float) -> CGFloat{
+        if seconds == 0 {
+            return 0
+        }
         return CGFloat(seconds * 100) / CGFloat(duration)
     }
     
@@ -534,19 +623,19 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         let startSeconds = secondsFromValue(self.progressPercentage)
         self.delegate?.indicatorDidChangePosition?(self, position: startSeconds)
     }
-
+    
     // MARK: -
-
+    
     override public func layoutSubviews() {
         super.layoutSubviews()
-
+        
         if progressPercentage > startPercentage {
             startTimeView.timeLabel.text = self.secondsToFormattedString(secondsFromValue(self.progressPercentage))
         } else {
             startTimeView.timeLabel.text = self.secondsToFormattedString(secondsFromValue(self.startPercentage))
         }
         endTimeView.timeLabel.text = self.secondsToFormattedString(secondsFromValue(self.endPercentage))
-
+        
         let startPosition = positionFromValue(self.startPercentage)
         let endPosition = positionFromValue(self.endPercentage)
         let progressPosition = positionFromValue(self.progressPercentage)
@@ -566,18 +655,18 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
                                      y: 0,
                                      width: endIndicator.frame.origin.x - startIndicator.frame.origin.x - endIndicator.frame.size.width,
                                      height: self.frame.height)
-
-
+        
+        
         topLine.frame = CGRect(x: startIndicator.frame.origin.x + startIndicator.frame.width,
                                y: -topBorderHeight,
                                width: endIndicator.frame.origin.x - startIndicator.frame.origin.x - endIndicator.frame.size.width,
                                height: topBorderHeight)
-
+        
         bottomLine.frame = CGRect(x: startIndicator.frame.origin.x + startIndicator.frame.width,
                                   y: self.frame.size.height,
                                   width: endIndicator.frame.origin.x - startIndicator.frame.origin.x - endIndicator.frame.size.width,
                                   height: bottomBorderHeight)
-
+        
         // Update time view
         if isTimeViewSticky {
             startTimeView.frame.origin.x = 0
@@ -590,8 +679,8 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         rightOverlay.frame = CGRect(x: 0, y: 0, width: startPosition, height: bounds.height)
         leftOverlay.frame = CGRect(x: endPosition, y: 0, width: bounds.width - endPosition, height: bounds.height)
     }
-
-
+    
+    
     override public func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         let extendedBounds = CGRect(x: -startIndicator.frame.size.width,
                                     y: -topLine.frame.size.height,
@@ -599,21 +688,22 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
                                     height: self.frame.size.height + topLine.frame.size.height + bottomLine.frame.size.height)
         return extendedBounds.contains(point)
     }
-
-
+    
+    
     private func secondsToFormattedString(_ totalSeconds: Float64) -> String{
         let hours:Int = Int(totalSeconds.truncatingRemainder(dividingBy: 86400) / 3600)
         let minutes:Int = Int(totalSeconds.truncatingRemainder(dividingBy: 3600) / 60)
         let seconds:Int = Int(totalSeconds.truncatingRemainder(dividingBy: 60))
-
+        
         if hours > 0 {
             return String(format: "%i:%02i:%02i", hours, minutes, seconds)
         } else {
             return String(format: "%02i:%02i", minutes, seconds)
         }
     }
-
+    
     deinit {
-      removeObserver(self, forKeyPath: "bounds")
+        self.thumbnailsManager.cancelThumbnailGeneration()
+        removeObserver(self, forKeyPath: "bounds")
     }
 }

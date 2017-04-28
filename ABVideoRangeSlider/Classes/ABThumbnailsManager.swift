@@ -48,6 +48,7 @@ class ABThumbnailsManager: NSObject {
     }
     
     private func thumbnailCount(_ inView: UIView) -> Int {
+        if inView.frame.size == .zero { return 0 }
         let num = Double(inView.frame.size.width) / Double(inView.frame.size.height)
         return Int(ceil(num))
     }
@@ -85,13 +86,19 @@ class ABThumbnailsManager: NSObject {
                 view.removeFromSuperview()
             }
         }
-    
+        
         let imagesCount = self.thumbnailCount(view)
         
         guard let timePoints  = self.timePointsForCount(avasset, count: imagesCount) else { return }
         
         self.imageGenerator = AVAssetImageGenerator(asset: avasset)
         self.imageGenerator.appliesPreferredTrackTransform = true
+        self.imageGenerator.maximumSize = CGSize(width: 200, height: 200)
+        
+        let tolerance = CMTimeMakeWithSeconds(0.01, 600)
+        self.imageGenerator.requestedTimeToleranceBefore = tolerance
+        self.imageGenerator.requestedTimeToleranceAfter = tolerance
+        
         self.isGeneratingThumbnails = true
         
         var thumbnailImages = [UIImage]()
