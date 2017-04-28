@@ -10,9 +10,9 @@ import UIKit
 import AVFoundation
 
 @objc public protocol ABVideoRangeSliderDelegate: class {
-    func didChangeValue(videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64)
-    func indicatorDidChangePosition(videoRangeSlider: ABVideoRangeSlider, position: Float64)
-    
+    @objc optional func didChangeValue(_ videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64)
+    @objc optional func indicatorDidChangePosition(_ videoRangeSlider: ABVideoRangeSlider, position: Float64)
+    @objc optional func onThumbnailsReady()
     @objc optional func sliderGesturesBegan()
     @objc optional func sliderGesturesEnded()
 }
@@ -280,7 +280,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
     public func updateThumbnails() {
         guard let asset = self.avasset else { return }
         DispatchQueue.global(qos: .background).async {
-            self.thumbnailsManager.generateThumbnails(self, for: asset)
+            self.thumbnailsManager.generateThumbnails(self, for: asset, completion: self.delegate?.onThumbnailsReady)
         }
     }
 
@@ -348,7 +348,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         let startSeconds = secondsFromValue(self.startPercentage)
         let endSeconds = secondsFromValue(self.endPercentage)
         
-        self.delegate?.didChangeValue(videoRangeSlider: self, startTime: startSeconds, endTime: endSeconds)
+        self.delegate?.didChangeValue?(self, startTime: startSeconds, endTime: endSeconds)
         
         if drag == .start {
             self.startPercentage = percentage
@@ -361,7 +361,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         } else {
             self.progressPercentage = percentage
             let progressSeconds = self.secondsFromValue(progressPercentage)
-            self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
+            self.delegate?.indicatorDidChangePosition?(self, position: progressSeconds)
             
             UIView.animate(withDuration: 0.5, delay: 0, options: .curveLinear, animations: {
                 self.progressIndicator.alpha = 1
@@ -402,7 +402,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
         let progressSeconds = secondsFromValue(progressPercentage)
 
-        self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
+        self.delegate?.indicatorDidChangePosition?(self, position: progressSeconds)
 
         self.progressPercentage = percentage
 
@@ -445,10 +445,10 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         
         let startSeconds = secondsFromValue(startPercentage)
         let endSeconds = secondsFromValue(endPercentage)
-        self.delegate?.didChangeValue(videoRangeSlider: self, startTime: startSeconds, endTime: endSeconds)
+        self.delegate?.didChangeValue?(self, startTime: startSeconds, endTime: endSeconds)
         
         let progressSeconds = startSeconds
-        self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: progressSeconds)
+        self.delegate?.indicatorDidChangePosition?(self, position: progressSeconds)
         
         self.startPercentage = startPercentage
         self.endPercentage = endPercentage
@@ -526,7 +526,7 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         progressIndicator.center = CGPoint(x: progressPosition , y: progressIndicator.center.y)
         
         let startSeconds = secondsFromValue(self.progressPercentage)
-        self.delegate?.indicatorDidChangePosition(videoRangeSlider: self, position: startSeconds)
+        self.delegate?.indicatorDidChangePosition?(self, position: startSeconds)
     }
 
     // MARK: -

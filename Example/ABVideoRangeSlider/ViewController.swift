@@ -11,7 +11,7 @@ import ABVideoRangeSlider
 import AVKit
 import AVFoundation
 
-class ViewController: UIViewController, ABVideoRangeSliderDelegate {
+class ViewController: UIViewController {
 
     @IBOutlet var videoRangeSlider: ABVideoRangeSlider!
     @IBOutlet var playerView: UIView!
@@ -40,8 +40,8 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
     var isSeekInProgress = false
     var chaseTime = kCMTimeZero
     
-    private var startTime = 50
-    private var endTime = 150
+    fileprivate var startTime = 50
+    fileprivate var endTime = 150
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -129,32 +129,7 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
             }
         }
     }
-    
-    // MARK: ABVideoRangeSlider Delegate - Returns time in seconds
-    
-    func didChangeValue(videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64) {
-        lblStart.text = "\(startTime)"
-        lblEnd.text = "\(endTime)"
-        
-        self.startTime = Int(startTime)
-        self.endTime = Int(endTime)
-        
-        if startTime > 0 || endTime < videoRangeSlider.duration {
-            videoRangeSlider.colorScheme = .green
-        } else {
-            videoRangeSlider.colorScheme = .gray
-        }
-    }
-    
-    func indicatorDidChangePosition(videoRangeSlider: ABVideoRangeSlider, position: Float64) {
-        lblStart.text = "\(position)"
-        lblProgress.text = "\(position)"
-        
-        let seekToTime = CMTimeMake(Int64(position), 1)
-        stopPlayingAndSeekSmoothlyToTime(seekToTime)
-    }
 
-    
     // MARK: AVPlayer Helper functions to seek
     
     func stopPlayingAndSeekSmoothlyToTime(_ newChaseTime: CMTime) {
@@ -189,5 +164,33 @@ class ViewController: UIViewController, ABVideoRangeSliderDelegate {
                 }
         })
     }
+}
+
+extension ViewController: ABVideoRangeSliderDelegate {
     
+    func didChangeValue(_ videoRangeSlider: ABVideoRangeSlider, startTime: Float64, endTime: Float64) {
+        lblStart.text = "\(startTime)"
+        lblEnd.text = "\(endTime)"
+        
+        self.startTime = Int(startTime)
+        self.endTime = Int(endTime)
+        
+        if startTime > 0 || endTime < videoRangeSlider.duration {
+            videoRangeSlider.colorScheme = .green
+        } else {
+            videoRangeSlider.colorScheme = .gray
+        }
+    }
+    
+    func indicatorDidChangePosition(_ videoRangeSlider: ABVideoRangeSlider, position: Float64) {
+        lblStart.text = "\(position)"
+        lblProgress.text = "\(position)"
+        
+        let seekToTime = CMTimeMake(Int64(position), 1)
+        stopPlayingAndSeekSmoothlyToTime(seekToTime)
+    }
+    
+    func onThumbnailsReady() {
+        print(#function)
+    }
 }

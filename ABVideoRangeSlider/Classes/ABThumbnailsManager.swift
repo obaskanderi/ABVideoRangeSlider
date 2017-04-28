@@ -55,7 +55,7 @@ class ABThumbnailsManager: NSObject {
     private func timePointsForCount(_ avasset: AVAsset, count: Int) -> [CMTime]? {
         let duration = CMTimeGetSeconds(avasset.duration)
         
-       if duration == 0 || count == 0 {
+        if duration == 0 || count == 0 {
             return nil
         }
         
@@ -76,7 +76,7 @@ class ABThumbnailsManager: NSObject {
         isGeneratingThumbnails = false
     }
     
-    func generateThumbnails(_ view: UIView, for avasset: AVAsset) {
+    func generateThumbnails(_ view: UIView, for avasset: AVAsset, completion: (() -> Void)? = nil) {
         
         cancelThumbnailGeneration()
         
@@ -105,6 +105,7 @@ class ABThumbnailsManager: NSObject {
             if requestedTime == timePoints.last {
                 self.isGeneratingThumbnails = false
                 self.addImagesToView(thumbnailImages, view: view)
+                completion?()
             }
         })
     }
