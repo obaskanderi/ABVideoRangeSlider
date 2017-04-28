@@ -60,6 +60,13 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         }
     }
     
+    public var overlayColor: UIColor = .white {
+        didSet {
+            self.leftOverlay.backgroundColor = overlayColor
+            self.rightOverlay.backgroundColor = overlayColor
+        }
+    }
+    
     public var progressIndicatorColor: UIColor = .white {
         didSet {
             self.progressIndicator.imageView.tintColor = progressIndicatorColor
@@ -230,7 +237,6 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
 
         draggableView.addGestureRecognizer(viewDrag)
         self.draggableView.backgroundColor = .clear
-        self.addSubview(draggableView)
         self.sendSubview(toBack: draggableView)
 
         // Setup time labels
@@ -244,14 +250,14 @@ public class ABVideoRangeSlider: UIView, UIGestureRecognizerDelegate {
         self.addSubview(endTimeView)
         
         
-        rightOverlay.alpha = 0.8
+        rightOverlay.alpha = 0.75
         rightOverlay.isOpaque = false
-        rightOverlay.backgroundColor = UIColor.white
+        rightOverlay.backgroundColor = overlayColor
         insertSubview(rightOverlay, belowSubview: startIndicator)
         
-        leftOverlay.alpha = 0.8
+        leftOverlay.alpha = 0.75
         leftOverlay.isOpaque = false
-        leftOverlay.backgroundColor = UIColor.white
+        leftOverlay.backgroundColor = overlayColor
         insertSubview(leftOverlay, belowSubview: endIndicator)
     }
 

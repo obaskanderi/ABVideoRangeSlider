@@ -65,8 +65,10 @@ class ViewController: UIViewController {
         videoRangeSlider.videoURL = URL(fileURLWithPath: path!)
         videoRangeSlider.delegate = self
         videoRangeSlider.minSpace = 15.0
-        videoRangeSlider.colorScheme = .gray
         videoRangeSlider.isTimeViewSticky = true
+        
+        videoRangeSlider.colorScheme = .gray
+        videoRangeSlider.overlayColor = .black
 //        videoRangeSlider.maxSpace = 180.0
 
         lblMinSpace.text = "\(videoRangeSlider.minSpace)"
